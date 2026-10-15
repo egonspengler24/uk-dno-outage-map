@@ -2,10 +2,10 @@ name: Update outages
 
 on:
   schedule:
-    # NEO feeds refresh every 15 minutes. GitHub's scheduler is best-effort
-    # and most often delays or drops runs at :00/:15/:30/:45, so run at
-    # off-peak minutes instead.
-    - cron: "7,22,37,52 * * * *"
+    # The 15-minute refresh is triggered by the Cloudflare Worker in worker/
+    # (via workflow_dispatch), because GitHub's scheduler is best-effort and
+    # wasn't firing for this repo. This hourly run is only a backup.
+    - cron: "37 * * * *"
   push:
     branches: [main]
   workflow_dispatch: {}

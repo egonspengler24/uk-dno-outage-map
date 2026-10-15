@@ -1,0 +1,14 @@
+name = "uk-dno-outage-refresh"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# Shortly after each quarter-hour, when the DNO feeds have just refreshed.
+[triggers]
+crons = ["2,17,32,47 * * * *"]
+
+[vars]
+GITHUB_REPO = "egonspengler24/uk-dno-outage-map"
+WORKFLOW_FILE = "update-outages.yml"
+GIT_REF = "main"
+
+# GITHUB_TOKEN is a secret, set with: npx wrangler secret put GITHUB_TOKEN

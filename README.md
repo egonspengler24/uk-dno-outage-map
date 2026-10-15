@@ -52,9 +52,33 @@ On Opendatasoft portals, create the key under your account → API keys.
 
 ### 3. Run it
 
-Actions → "Update outages" → Run workflow. After that it runs every 15
-minutes and on every push to `main`. Fetch problems appear as warnings on
-the run summary and in the map panel.
+Actions → "Update outages" → Run workflow. It also runs on every push to
+`main`, and every 15 minutes via the Cloudflare Worker (below). Fetch
+problems appear as warnings on the run summary and in the map panel.
+
+### 4. 15-minute refresh (Cloudflare Worker)
+
+GitHub's own `schedule` trigger is best-effort and didn't fire for this
+repo, so a Cloudflare Worker ([`worker/`](worker/)) starts the workflow at
+:02, :17, :32 and :47 past each hour. The workflow keeps an hourly
+GitHub schedule as a backup.
+
+1. Create a GitHub fine-grained personal access token
+   (Settings → Developer settings → Fine-grained tokens): repository access
+   **only `uk-dno-outage-map`**, permission **Actions: Read and write**.
+2. Deploy the Worker and store the token as a Worker secret:
+
+   ```bash
+   cd worker
+   npx wrangler login
+   npx wrangler deploy
+   npx wrangler secret put GITHUB_TOKEN
+   ```
+
+3. Check: runs triggered by `workflow_dispatch` appear in the Actions tab
+   at those times. `npx wrangler tail` shows the Worker's logs live.
+
+When the token expires, create a new one and rerun `wrangler secret put`.
 
 ## Adding a DNO that's still a placeholder
 
