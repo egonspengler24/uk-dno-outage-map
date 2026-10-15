@@ -8,9 +8,11 @@ function isEmpty(value) {
 }
 
 // Reads a mapped field; `spec` is a column name, a list of fallback column
-// names, or null (not provided by this DNO).
+// names, a function deriving the value from the raw record, or null (not
+// provided by this DNO).
 function pick(raw, spec) {
   if (!spec) return null;
+  if (typeof spec === "function") return spec(raw);
   for (const name of Array.isArray(spec) ? spec : [spec]) {
     if (!isEmpty(raw[name])) return raw[name];
   }
@@ -39,7 +41,7 @@ function toPostcodes(value) {
   const list = Array.isArray(value) ? value : [value];
   return list
     .flatMap((p) => String(p).replace(/[[\]"'\\]/g, "").split(/[,;]/))
-    .map((p) => p.trim())
+    .map((p) => p.trim().replace(/\s+/g, " "))
     .filter(Boolean);
 }
 
@@ -96,6 +98,30 @@ export function normaliseRecord(raw, dno) {
       as_at: ts(f.as_at),
     },
   };
+}
+
+// For feeds that publish one row per affected postcode (NPg): merges
+// features sharing a fault_id into one, combining postcodes and turning the
+// individual locations into a MultiPoint.
+export function mergeByFaultId(features) {
+  const merged = new Map();
+  for (const f of features) {
+    const existing = merged.get(f.id);
+    if (!existing) {
+      merged.set(f.id, { ...f, properties: { ...f.properties }, points: f.geometry?.type === "Point" ? [f.geometry.coordinates] : [] });
+      continue;
+    }
+    const p = existing.properties;
+    p.postcodes = [...new Set([...p.postcodes, ...f.properties.postcodes])];
+    if (f.properties.as_at && (!p.as_at || f.properties.as_at > p.as_at)) p.as_at = f.properties.as_at;
+    if (f.geometry?.type === "Point") existing.points.push(f.geometry.coordinates);
+  }
+
+  return [...merged.values()].map(({ points, ...f }) => {
+    const unique = [...new Map(points.map((c) => [c.join(","), c])).values()];
+    if (unique.length > 1) f.geometry = { type: "MultiPoint", coordinates: unique };
+    return f;
+  });
 }
 
 export function isActive(feature) {

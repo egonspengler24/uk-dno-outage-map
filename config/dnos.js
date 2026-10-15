@@ -122,15 +122,40 @@ export const DNOS = [
     name: "Northern Powergrid",
     shortName: "NPg",
     boundaryNames: ["NPG (Northern Electric)", "NPG (Yorkshire Electric)"],
-    portalUrl: "https://northernpowergrid.opendatasoft.com/",
+    portalUrl: "https://northernpowergrid.opendatasoft.com/explore/dataset/live-power-cuts-data/",
     licence: "Northern Powergrid Open Data Licence v1.0",
     secretEnv: "NPG_API_KEY",
-    keyRequired: true,
-    // TODO: no NEO dataset is visible publicly on the NPg portal. Once you
-    // have an account, look for it after logging in and fill this in, e.g.
-    // { type: "opendatasoft", baseUrl: "https://northernpowergrid.opendatasoft.com", dataset: "<id>" }
-    source: null,
-    fields: null,
+    // Records are currently public; the key is sent if the secret is set.
+    keyRequired: false,
+    source: {
+      type: "opendatasoft",
+      baseUrl: "https://northernpowergrid.opendatasoft.com",
+      dataset: "live-power-cuts-data",
+    },
+    // NPg's own power-cut format rather than NEO: one row per affected
+    // postcode, so rows are merged by reference. Timestamps are UK local
+    // time labelled +00:00.
+    groupByFaultId: true,
+    ignoreTimezoneOffset: true,
+    fields: {
+      fault_id: "reference",
+      // incidentstatus codes, inferred from the customer messages that
+      // accompany them: 4 = work scheduled, 5 = in progress, 6 = power
+      // restored / work completed.
+      status: (r) => ({ 4: "Awaiting", 5: "In Progress", 6: "Restored" })[r.incidentstatus] ?? null,
+      planned: (r) => r.natureofoutage === "Planned Work on System",
+      voltage: (r) => r.type?.split("_")[0] ?? null,
+      customers_off: "totalconfirmedpowercut",
+      postcodes: "postcode",
+      licence_area: "area",
+      start: "loggedtime",
+      etr: "estimatedtimetillresolution",
+      restored: null,
+      as_at: "updatedate",
+      geometry: "geopoint",
+      lat: "lat",
+      lon: "lng",
+    },
   },
   {
     id: "nged",

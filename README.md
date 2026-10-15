@@ -23,7 +23,7 @@ calls a DNO API directly and never sees an API key.
 | UK Power Networks | Opendatasoft | `ukpn-national-energy-outage` | Yes | `UKPN_API_KEY` | Live |
 | SP Energy Networks | Opendatasoft | `national-energy-outage-data` | Yes | `SPEN_API_KEY` | Live |
 | National Grid Electricity Distribution | CKAN (CSV) | `live-power-cuts` → "Live Detailed Power Cuts" | No | `NGED_API_KEY` (optional) | Live |
-| Northern Powergrid | Opendatasoft | _not yet identified_ | Probably | `NPG_API_KEY` | Placeholder |
+| Northern Powergrid | Opendatasoft | `live-power-cuts-data` (NPg format, not NEO) | No | `NPG_API_KEY` (optional) | Live |
 | SSEN | _unknown_ | _not yet identified_ | Probably | `SSEN_API_KEY` | Placeholder |
 
 All DNO settings live in [`config/dnos.js`](config/dnos.js).

@@ -15,7 +15,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { DNOS } from "../config/dnos.js";
-import { normaliseRecord, isActive } from "./lib/normalise.js";
+import { normaliseRecord, mergeByFaultId, isActive } from "./lib/normalise.js";
 import { parseTimestamp } from "./lib/time.js";
 import * as opendatasoft from "./lib/adapters/opendatasoft.js";
 import * as ckan from "./lib/adapters/ckan.js";
@@ -96,7 +96,8 @@ async function fetchDno(dno, now, previousStatus, previousFeatures) {
 
   try {
     const records = await adapter.fetchRecords(dno.source, apiKey);
-    const features = records.map((r) => normaliseRecord(r, dno));
+    let features = records.map((r) => normaliseRecord(r, dno));
+    if (dno.groupByFaultId) features = mergeByFaultId(features);
     const located = features.filter((f) => f.geometry);
 
     status.state = "ok";

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 import { DNOS } from "../config/dnos.js";
-import { normaliseRecord, isActive } from "../scripts/lib/normalise.js";
+import { normaliseRecord, mergeByFaultId, isActive } from "../scripts/lib/normalise.js";
 import { parseTimestamp } from "../scripts/lib/time.js";
 import { parseCsv } from "../scripts/lib/csv.js";
 
@@ -72,4 +72,26 @@ test("UKPN text-encoded postcode lists are cleaned up", () => {
 test("SPEN timestamps labelled +00:00 are read as UK local time", () => {
   const raw = { fault_id: "INCD-2", upload_date: "2026-10-15T12:00:34+00:00", location_latitude: 55.9, location_longitude: -3.2 };
   assert.equal(normaliseRecord(raw, dno("spen")).properties.as_at, "2026-10-15T11:00:34.000Z");
+});
+
+test("NPg per-postcode rows merge into one outage per reference", async () => {
+  const raw = JSON.parse(await fixture("npg-sample.json"));
+  const features = mergeByFaultId(raw.map((r) => normaliseRecord(r, dno("npg"))));
+  assert.equal(features.length, 2);
+
+  const [planned, restored] = features;
+  assert.equal(planned.id, "npg:PPCR80199");
+  assert.deepEqual(planned.properties.postcodes, ["DL8 3PN", "DL8 3PJ"]);
+  assert.equal(planned.geometry.type, "MultiPoint");
+  assert.equal(planned.geometry.coordinates.length, 2);
+  assert.equal(planned.properties.status, "In Progress");
+  assert.equal(planned.properties.planned, true);
+  assert.equal(planned.properties.voltage, "LV");
+  assert.equal(planned.properties.customers_off, 73);
+  // Local time labelled +00:00: 12:05:14 BST is 11:05:14 UTC.
+  assert.equal(planned.properties.as_at, "2026-10-15T11:05:14.000Z");
+  assert.equal(isActive(planned), true);
+
+  assert.equal(restored.properties.status, "Restored");
+  assert.equal(isActive(restored), false);
 });
