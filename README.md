@@ -24,7 +24,7 @@ calls a DNO API directly and never sees an API key.
 | SP Energy Networks | Opendatasoft | `national-energy-outage-data` | Yes | `SPEN_API_KEY` | Live |
 | National Grid Electricity Distribution | CKAN (CSV) | `live-power-cuts` → "Live Detailed Power Cuts" | No | `NGED_API_KEY` (optional) | Live |
 | Northern Powergrid | Opendatasoft | `live-power-cuts-data` (NPg format, not NEO) | No | `NPG_API_KEY` (optional) | Live |
-| SSEN | _unknown_ | _not yet identified_ | Probably | `SSEN_API_KEY` | Placeholder |
+| SSEN | Power Track JSON API | `getallfaults` (SSEN format, not NEO) | No | `SSEN_API_KEY` (optional) | Live |
 
 All DNO settings live in [`config/dnos.js`](config/dnos.js).
 
@@ -61,7 +61,7 @@ the run summary and in the map panel.
 1. Find its NEO dataset on the portal (log in first; it may not be public).
 2. In `config/dnos.js`, fill in `source` and the `fields` mapping (match
    each of our properties to the DNO's column names).
-3. If the portal isn't Opendatasoft or CKAN, add an adapter in
+3. If the portal isn't Opendatasoft, CKAN or a plain JSON API, add an adapter in
    `scripts/lib/adapters/` exporting `fetchMetadata` and `fetchRecords`, and
    register it in `scripts/fetch-outages.js`.
 4. Add the secret, and if you invent a new secret name, pass it through in

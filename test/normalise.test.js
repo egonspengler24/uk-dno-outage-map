@@ -95,3 +95,24 @@ test("NPg per-postcode rows merge into one outage per reference", async () => {
   assert.equal(restored.properties.status, "Restored");
   assert.equal(isActive(restored), false);
 });
+
+test("SSEN Power Track faults normalise with derived status", async () => {
+  const body = JSON.parse(await fixture("ssen-sample.json"));
+  const records = body.faults.map((r) => ({ ...r, _feed_timestamp: body.timestampUtc }));
+  const [psi, onSite, waiting] = records.map((r) => normaliseRecord(r, dno("ssen")));
+
+  assert.equal(psi.id, "ssen:254583");
+  assert.equal(psi.properties.planned, true);
+  assert.equal(psi.properties.voltage, null);
+  assert.equal(psi.properties.status, "In Progress"); // planned start is in the past
+  assert.equal(psi.properties.licence_area, "Southern England");
+  assert.equal(psi.geometry.type, "Point");
+
+  assert.equal(onSite.properties.status, "In Progress");
+  assert.equal(onSite.properties.voltage, "LV");
+  assert.equal(onSite.properties.customers_off, 5);
+
+  assert.equal(waiting.properties.status, "Awaiting");
+  assert.equal(waiting.properties.licence_area, "North of Scotland");
+  assert.equal(waiting.properties.as_at, "2026-10-15T11:55:59.000Z");
+});

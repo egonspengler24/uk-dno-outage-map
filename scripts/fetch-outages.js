@@ -19,8 +19,9 @@ import { normaliseRecord, mergeByFaultId, isActive } from "./lib/normalise.js";
 import { parseTimestamp } from "./lib/time.js";
 import * as opendatasoft from "./lib/adapters/opendatasoft.js";
 import * as ckan from "./lib/adapters/ckan.js";
+import * as json from "./lib/adapters/json.js";
 
-const ADAPTERS = { opendatasoft, ckan };
+const ADAPTERS = { opendatasoft, ckan, json };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, "..", "data");

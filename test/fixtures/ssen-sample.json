@@ -1,0 +1,102 @@
+{
+ "timestampUtc": "2026-10-15T11:55:59Z",
+ "faults": [
+  {
+   "title": "GU10 Area",
+   "reference": "254583",
+   "loggedAtUtc": "2026-09-28T07:00:00Z",
+   "type": "PSI",
+   "location": {
+    "latitude": 51.20667299999999,
+    "longitude": -0.8444417999999999
+   },
+   "estimatedArrivalOnSiteUtc": null,
+   "estimatedRestorationTimeUtc": "2026-10-28T10:00:00Z",
+   "estimatedFaultUpdateTimeUtc": null,
+   "engineerOnSiteTimeUtc": null,
+   "message": "",
+   "affectedAreas": [
+    "GU10 5EF"
+   ],
+   "localSevereMessage": null,
+   "overrideEstimatedFaultUpdateTime": null,
+   "uri": "https://external.distribution.prd.ssen.co.uk/opendataportal-prd/v4/api/getbyid/254583",
+   "depotCode": "29",
+   "primaryNrn": 1025,
+   "hvFeederNrn": 301,
+   "transformerNrn": 5,
+   "lvFeederNrn": 1,
+   "jobStatus": "",
+   "jobSubType": "",
+   "transformerType": "",
+   "mergedTo": "",
+   "customerCount": 1
+  },
+  {
+   "title": "BA11 Area",
+   "reference": "UC4779",
+   "loggedAtUtc": "2026-10-15T10:28:00Z",
+   "type": "LV",
+   "location": {
+    "latitude": 51.2214172,
+    "longitude": -2.3257513
+   },
+   "estimatedArrivalOnSiteUtc": null,
+   "estimatedRestorationTimeUtc": "2026-10-15T15:30:00Z",
+   "estimatedFaultUpdateTimeUtc": null,
+   "engineerOnSiteTimeUtc": "2026-10-15T11:20:00Z",
+   "message": "",
+   "affectedAreas": [
+    "BA11",
+    "BA11 4BG",
+    "BA11 4BN",
+    "BA11 4RL"
+   ],
+   "localSevereMessage": null,
+   "overrideEstimatedFaultUpdateTime": null,
+   "uri": "https://external.distribution.prd.ssen.co.uk/opendataportal-prd/v4/api/getbyid/UC4779",
+   "depotCode": "38",
+   "primaryNrn": 3128,
+   "hvFeederNrn": 14,
+   "transformerNrn": 40,
+   "lvFeederNrn": 3,
+   "jobStatus": "I",
+   "jobSubType": "10",
+   "transformerType": "U",
+   "mergedTo": "",
+   "customerCount": 5
+  },
+  {
+   "title": "PA23 Area",
+   "reference": "UC5009",
+   "loggedAtUtc": "2026-10-15T11:53:00Z",
+   "type": "HV",
+   "location": {
+    "latitude": 55.9891304,
+    "longitude": -5.016405199999999
+   },
+   "estimatedArrivalOnSiteUtc": null,
+   "estimatedRestorationTimeUtc": null,
+   "estimatedFaultUpdateTimeUtc": null,
+   "engineerOnSiteTimeUtc": null,
+   "message": "",
+   "affectedAreas": [
+    "PA23 8RE",
+    "PA23 8RG"
+   ],
+   "localSevereMessage": null,
+   "overrideEstimatedFaultUpdateTime": null,
+   "uri": "https://external.distribution.prd.ssen.co.uk/opendataportal-prd/v4/api/getbyid/UC5009",
+   "depotCode": "57",
+   "primaryNrn": 380,
+   "hvFeederNrn": 304,
+   "transformerNrn": 85,
+   "lvFeederNrn": 0,
+   "jobStatus": "P",
+   "jobSubType": "01",
+   "transformerType": "O",
+   "mergedTo": "",
+   "customerCount": 8
+  }
+ ]
+}

@@ -196,14 +196,45 @@ export const DNOS = [
     name: "Scottish and Southern Electricity Networks",
     shortName: "SSEN",
     boundaryNames: ["SSE", "SSE (Southern)"],
-    portalUrl: "https://www.ssen.co.uk/",
-    licence: null,
+    portalUrl: "https://data.ssen.co.uk/@ssen-distribution/realtime_outage_dataset",
+    licence: "CC BY 4.0",
     secretEnv: "SSEN_API_KEY",
-    keyRequired: true,
-    // TODO: SSEN's NEO endpoint hasn't been identified yet. Once known, add
-    // a `source` (and a new adapter in scripts/lib/adapters/ if it isn't
-    // Opendatasoft or CKAN) plus the `fields` mapping.
-    source: null,
-    fields: null,
+    // The Power Track API is public; the key is sent if the secret is set.
+    // (SSEN's CKAN catalogue blocks non-browser clients, but the API that
+    // the catalogue points to does not.)
+    keyRequired: false,
+    source: {
+      type: "json",
+      url: "https://external.distribution.prd.ssen.co.uk/opendataportal-prd/v4/api/getallfaults",
+      recordsPath: "faults",
+      timestampPath: "timestampUtc",
+    },
+    // SSEN's own Power Track format rather than NEO. `type` is PSI (planned
+    // supply interruption), HV or LV. Restored outages drop out of the feed.
+    fields: {
+      fault_id: "reference",
+      // jobStatus codes are undocumented, so status follows the published
+      // stages: engineer on site, or planned work past its start, is in
+      // progress; anything else is awaiting.
+      status: (r) =>
+        r.engineerOnSiteTimeUtc || (r.type === "PSI" && Date.parse(r.loggedAtUtc) <= Date.now())
+          ? "In Progress"
+          : "Awaiting",
+      planned: (r) => r.type === "PSI",
+      voltage: (r) => (r.type === "HV" || r.type === "LV" ? r.type : null),
+      customers_off: "customerCount",
+      postcodes: "affectedAreas",
+      // SHEPD covers the north of Scotland, SEPD central southern England.
+      licence_area: (r) =>
+        r.location?.latitude == null ? null : r.location.latitude > 55 ? "North of Scotland" : "Southern England",
+      start: "loggedAtUtc",
+      etr: "estimatedRestorationTimeUtc",
+      restored: null,
+      as_at: "_feed_timestamp",
+      geometry: (r) =>
+        r.location ? { type: "Point", coordinates: [r.location.longitude, r.location.latitude] } : null,
+      lat: null,
+      lon: null,
+    },
   },
 ];
