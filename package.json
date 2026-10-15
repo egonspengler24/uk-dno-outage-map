@@ -1,10 +1,12 @@
 {
-  "name": "enw-outage-map",
+  "name": "uk-dno-outage-map",
   "private": true,
   "type": "module",
   "scripts": {
     "fetch-outages": "node scripts/fetch-outages.js",
-    "fetch-masts": "node scripts/fetch-masts.js"
+    "fetch-masts": "node scripts/fetch-masts.js",
+    "build-boundaries": "node scripts/build-boundaries.js",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=20"

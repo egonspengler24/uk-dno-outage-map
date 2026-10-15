@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Electricity North West - Live Outage Map</title>
+  <title>UK Power Cuts - DNO NEO Feeds</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <link rel="stylesheet" href="css/style.css" />
@@ -12,29 +12,38 @@
   <div id="map"></div>
 
   <div id="panel">
-    <h1>ENW Live Outages</h1>
+    <h1>UK Power Cuts <span class="subtitle">National Energy Outage feeds</span></h1>
 
     <div id="status-line">
       <span id="last-updated">Loading outage data&hellip;</span>
     </div>
 
-    <div class="legend">
+    <div class="section-title">DNO feeds</div>
+    <ul id="dno-list"></ul>
+
+    <div class="section-title">Show</div>
+    <label class="toggle-row"><input type="checkbox" id="toggle-planned" checked /> Planned outages</label>
+    <label class="toggle-row"><input type="checkbox" id="toggle-restored" /> Restored / completed</label>
+    <label class="toggle-row"><input type="checkbox" id="toggle-masts" /> Mobile masts</label>
+
+    <details class="legend">
+      <summary>Legend</summary>
+      <div class="legend-title">Licence area (feed freshness)</div>
+      <div class="legend-row"><span class="swatch" style="background:var(--fresh)"></span> Updated within 30 min</div>
+      <div class="legend-row"><span class="swatch" style="background:var(--lagging)"></span> 30&ndash;60 min old</div>
+      <div class="legend-row"><span class="swatch" style="background:var(--stale)"></span> Over 60 min old / error</div>
+      <div class="legend-row"><span class="swatch" style="background:var(--nodata)"></span> No feed yet</div>
       <div class="legend-title">Outage status</div>
       <div class="legend-row"><span class="swatch" style="background:#d7263d"></span> In Progress</div>
       <div class="legend-row"><span class="swatch" style="background:#f4a300"></span> Awaiting</div>
-      <div class="legend-row"><span class="swatch" style="background:#2e7d32"></span> Restored</div>
+      <div class="legend-row"><span class="swatch" style="background:#2e7d32"></span> Restored / completed</div>
       <div class="legend-row"><span class="swatch" style="background:#6c757d"></span> Other</div>
       <div class="legend-row"><span class="swatch-dashed"></span> Planned outage</div>
-    </div>
-
-    <label class="toggle-row">
-      <input type="checkbox" id="toggle-masts" checked />
-      Show mobile masts
-    </label>
+    </details>
 
     <div id="attribution">
-      Outage data &copy; <a href="https://www.enwl.co.uk/" target="_blank" rel="noopener">Electricity North West</a>,
-      via their <a href="https://electricitynorthwest.opendatasoft.com/" target="_blank" rel="noopener">open data portal</a>.<br />
+      <div id="dno-attribution"></div>
+      Licence area boundaries &copy; Northern Powergrid.<br />
       Mast/cell data &copy; <a href="https://opencellid.org/" target="_blank" rel="noopener">OpenCelliD</a> contributors, CC-BY-SA 4.0.<br />
       Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors.
     </div>

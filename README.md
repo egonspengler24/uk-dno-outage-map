@@ -1,93 +1,121 @@
-# ENW Live Outage Map
+# UK Power Cuts - DNO NEO Feed Map
 
-A static, GitHub-Pages-hosted Leaflet map showing:
+A static, GitHub-Pages-hosted Leaflet map that pulls together the **National
+Energy Outage (NEO)** feeds published by each UK Distribution Network
+Operator (DNO) and shows:
 
-- **Electricity North West outages** (polygons/lines/points from their open
-  data API), refreshed roughly every 5 minutes via a scheduled GitHub Actions
-  job that commits `data/outages.json`.
-- **Mobile mast / cell locations** (static, from OpenCelliD) as an overlay
-  toggle.
+- every current outage (points, lines and polygons as supplied by the DNO),
+- each DNO's licence area coloured by **how fresh its feed is**,
+- a panel listing every DNO with when its data was last refreshed, or why
+  it isn't live yet,
+- an optional mobile mast overlay (OpenCelliD).
 
-The page itself never calls the ENW API directly and never contains the API
-key - it just reads the static `data/outages.json` file that Actions keeps
-up to date. This keeps the key out of client-side code entirely.
+A scheduled GitHub Actions job fetches every feed every 15 minutes,
+normalises the records to one shape, and deploys the site plus
+`data/outages.json` and `data/status.json` to GitHub Pages. The page never
+calls a DNO API directly and never sees an API key.
 
-## 1. Get an OpenCelliD key and build the mast layer (optional but wanted)
+## DNO feed status
+
+| DNO | Portal | Dataset | Key needed | Secret | Status |
+|---|---|---|---|---|---|
+| Electricity North West | Opendatasoft | `sp-enw-live-neop` | Yes | `ENW_API_KEY` | Ready - add key |
+| UK Power Networks | Opendatasoft | `ukpn-national-energy-outage` | Yes | `UKPN_API_KEY` | Ready - add key (mapping unverified) |
+| SP Energy Networks | Opendatasoft | `national-energy-outage-data` | Yes | `SPEN_API_KEY` | Ready - add key (mapping unverified) |
+| National Grid Electricity Distribution | CKAN (CSV) | `live-power-cuts` → "Live Detailed Power Cuts" | No | `NGED_API_KEY` (optional) | Live |
+| Northern Powergrid | Opendatasoft | _not yet identified_ | Probably | `NPG_API_KEY` | Placeholder |
+| SSEN | _unknown_ | _not yet identified_ | Probably | `SSEN_API_KEY` | Placeholder |
+
+All DNO settings live in [`config/dnos.js`](config/dnos.js).
+
+## Setup
+
+### 1. Switch GitHub Pages to deploy from Actions (one-off)
+
+Repo → Settings → Pages → "Build and deployment" → Source: **GitHub
+Actions**. (The workflow now deploys the site itself instead of committing
+data to `main`.)
+
+### 2. Add DNO API keys as repository secrets
+
+Never put keys in any committed file. For each DNO you have an account with:
+
+```bash
+gh secret set ENW_API_KEY
+```
+
+(`gh` prompts for the value so it doesn't end up in your shell history.) Or
+use the web UI: Settings → Secrets and variables → Actions → New repository
+secret.
+
+On Opendatasoft portals, create the key under your account → API keys.
+
+### 3. Run it
+
+Actions → "Update outages" → Run workflow. After that it runs every 15
+minutes and on every push to `main`. Fetch problems appear as warnings on
+the run summary and in the map panel.
+
+## Adding a DNO that's still a placeholder
+
+1. Find its NEO dataset on the portal (log in first; it may not be public).
+2. In `config/dnos.js`, fill in `source` and the `fields` mapping (match
+   each of our properties to the DNO's column names).
+3. If the portal isn't Opendatasoft or CKAN, add an adapter in
+   `scripts/lib/adapters/` exporting `fetchMetadata` and `fetchRecords`, and
+   register it in `scripts/fetch-outages.js`.
+4. Add the secret, and if you invent a new secret name, pass it through in
+   `.github/workflows/update-outages.yml`.
+5. Ideally add a sample record to `test/fixtures/` and a test case.
+
+## Running locally
+
+```bash
+ENW_API_KEY=your_key npm run fetch-outages
+```
+
+```bash
+npx serve .
+```
+
+Then open the printed URL (opening `index.html` via `file://` blocks the
+`fetch()` calls). `npm test` runs the normalisation tests.
+
+## How freshness is shown
+
+For each DNO the status file records:
+
+- **dataAsAt** - the newest `as_at`/upload timestamp in the DNO's records,
+- **portalUpdated** - when the portal says the dataset was last processed
+  (public metadata, so it's shown even before a key is added),
+- **lastSuccess / lastAttempt** - our own fetch times.
+
+Licence areas are green if the data is under 30 minutes old, amber up to 60
+minutes, red beyond that or on a fetch error, and grey when there's no feed
+yet. If a fetch fails, the DNO's last good records are carried over from
+the live site.
+
+## Data quirks handled
+
+- Field names differ between DNOs despite the common NEO format, hence the
+  per-DNO `fields` mapping.
+- ENW labels UK local time as `+00:00`; `ignoreTimezoneOffset: true` fixes
+  this. Naive timestamps (e.g. NGED's CSV) are read as UK local time.
+- Placeholder dates such as `0001-01-01` become `null`.
+
+## Mobile mast layer (optional)
 
 1. Sign up for a free key at https://opencellid.org/.
-2. Run locally (key is only used on your machine, never committed):
-   ```bash
-   OPENCELLID_API_KEY=your_key_here npm run fetch-masts
-   ```
-3. This overwrites `data/masts.geojson`. Commit that file - it's static data,
-   not a secret.
+2. `OPENCELLID_API_KEY=your_key npm run fetch-masts`
+3. Commit the resulting `data/masts.geojson` (static data, not a secret).
 
-If you skip this, the map still works, just with an empty mast layer.
+The layer loads only when "Mobile masts" is ticked. OpenCelliD entries are
+crowd-sourced and approximate; data is CC-BY-SA 4.0.
 
-## 2. Create the GitHub repo
+## Licensing
 
-```bash
-cd "OpenDataAPI"
-git init
-git add .
-git commit -m "Initial commit: ENW outage map"
-gh repo create <your-repo-name> --public --source=. --remote=origin --push
-```
-
-(Or create the repo on github.com first, then `git remote add origin <url>`
-and `git push -u origin main`.)
-
-## 3. Add the ENW API key as a repository secret
-
-**Do not put the key in any file that gets committed.** Add it as an
-encrypted GitHub Actions secret instead:
-
-```bash
-gh secret set ENW_API_KEY --body "your-enw-api-key-here"
-```
-
-Or via the web UI: repo → Settings → Secrets and variables → Actions →
-"New repository secret" → name `ENW_API_KEY`.
-
-> **Rotate your key.** The key you shared in chat should be treated as
-> exposed - request a new one from the ENW open data portal and use that
-> for the secret, rather than the one already shown here.
-
-## 4. Allow the workflow to push commits
-
-The scheduled workflow commits the refreshed `data/outages.json` back to the
-repo, so it needs write access to contents:
-
-Repo → Settings → Actions → General → "Workflow permissions" → select
-**"Read and write permissions"** → Save.
-
-## 5. Enable GitHub Pages
-
-Repo → Settings → Pages → "Build and deployment" → Source: **Deploy from a
-branch** → Branch: `main`, folder `/ (root)` → Save.
-
-Your site will be live at `https://<your-username>.github.io/<repo-name>/`
-within a minute or two.
-
-## 6. Verify the Action
-
-Repo → Actions → "Update outages" → "Run workflow" (manual trigger via
-`workflow_dispatch`) to confirm it fetches and commits successfully before
-waiting for the schedule.
-
-## Notes and limitations
-
-- **Refresh timing**: GitHub's `schedule` cron trigger is best-effort, not
-  exact - especially on free/public repos, runs can lag 5-15 minutes behind
-  the `*/5 * * * *` schedule at busy times. The page itself polls the static
-  JSON every 5 minutes regardless.
-- **Commit history growth**: with outages changing often, this can create a
-  lot of commits over time. That's harmless functionally, but if it bothers
-  you, an option later is to write to a dedicated `data` branch and
-  force-push a single commit instead of accumulating history on `main`.
-- **Mast data caveat**: OpenCelliD entries are crowd-sourced cell
-  measurement positions, not officially surveyed mast sites - treat them as
-  approximate. Data is CC-BY-SA 4.0; keep the attribution shown in the app.
-- **Local preview**: open `index.html` via a local static server (e.g.
-  `npx serve .`) - opening the file directly with `file://` will block the
-  `fetch()` calls in some browsers.
+UKPN and SPEN publish under CC BY 4.0; NGED and Northern Powergrid under
+their own open data licences. **Check ENW's "SP ENW Shared Licence" terms**
+before making raw ENW records public. Attribution for every live feed is
+shown in the map panel. Licence area boundaries come from Northern
+Powergrid's `all_dno_boundaries` dataset (`npm run build-boundaries`).

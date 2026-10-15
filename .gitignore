@@ -1,3 +1,7 @@
 node_modules/
 .env
 .DS_Store
+_site/
+# Generated every run by the workflow and deployed straight to Pages
+data/outages.json
+data/status.json

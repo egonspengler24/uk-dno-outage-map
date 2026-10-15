@@ -2,42 +2,64 @@ name: Update outages
 
 on:
   schedule:
-    # Every 5 minutes. GitHub does not guarantee exact timing for scheduled
-    # workflows (public repos in particular can see delays of several
-    # minutes under load), so treat this as "at least every ~5-15 min".
-    - cron: "*/5 * * * *"
+    # NEO feeds refresh every 15 minutes. GitHub's scheduler is best-effort,
+    # so runs can start several minutes late at busy times.
+    - cron: "*/15 * * * *"
+  push:
+    branches: [main]
   workflow_dispatch: {}
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: update-outages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  update:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      - name: Fetch latest outages
+      - name: Run tests
+        run: npm test
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Fetch NEO feeds from all DNOs
         env:
+          # The live site's data, used to carry over a DNO's last good
+          # records if its feed fails this run.
+          PREVIOUS_DATA_URL: ${{ steps.pages.outputs.base_url }}/data
+          # One secret per DNO. Add each in Settings → Secrets and variables
+          # → Actions as you get keys; missing ones show "Awaiting API key".
           ENW_API_KEY: ${{ secrets.ENW_API_KEY }}
+          UKPN_API_KEY: ${{ secrets.UKPN_API_KEY }}
+          SPEN_API_KEY: ${{ secrets.SPEN_API_KEY }}
+          NPG_API_KEY: ${{ secrets.NPG_API_KEY }}
+          NGED_API_KEY: ${{ secrets.NGED_API_KEY }}
+          SSEN_API_KEY: ${{ secrets.SSEN_API_KEY }}
         run: node scripts/fetch-outages.js
 
-      - name: Commit updated data if changed
+      - name: Assemble site
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- data/outages.json; then
-            echo "No changes to commit."
-          else
-            git add data/outages.json
-            git commit -m "Update outages data [skip ci]"
-            git push
-          fi
+          mkdir -p _site
+          cp -r index.html css js data _site/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
