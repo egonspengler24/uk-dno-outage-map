@@ -44,7 +44,7 @@ jobs:
           PREVIOUS_DATA_URL: ${{ steps.pages.outputs.base_url }}/data
           # One secret per DNO. Add each in Settings → Secrets and variables
           # → Actions as you get keys; missing ones show "Awaiting API key".
-          ENW_API_KEY: ${{ secrets.ENW_API_KEY }}
+          ENWL_API_KEY: ${{ secrets.ENWL_API_KEY }}
           UKPN_API_KEY: ${{ secrets.UKPN_API_KEY }}
           SPEN_API_KEY: ${{ secrets.SPEN_API_KEY }}
           NPG_API_KEY: ${{ secrets.NPG_API_KEY }}

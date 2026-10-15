@@ -19,9 +19,9 @@ calls a DNO API directly and never sees an API key.
 
 | DNO | Portal | Dataset | Key needed | Secret | Status |
 |---|---|---|---|---|---|
-| Electricity North West | Opendatasoft | `sp-enw-live-neop` | Yes | `ENW_API_KEY` | Ready - add key |
-| UK Power Networks | Opendatasoft | `ukpn-national-energy-outage` | Yes | `UKPN_API_KEY` | Ready - add key (mapping unverified) |
-| SP Energy Networks | Opendatasoft | `national-energy-outage-data` | Yes | `SPEN_API_KEY` | Ready - add key (mapping unverified) |
+| Electricity North West | Opendatasoft | `sp-enw-live-neop` | Yes | `ENWL_API_KEY` | Live |
+| UK Power Networks | Opendatasoft | `ukpn-national-energy-outage` | Yes | `UKPN_API_KEY` | Live |
+| SP Energy Networks | Opendatasoft | `national-energy-outage-data` | Yes | `SPEN_API_KEY` | Live |
 | National Grid Electricity Distribution | CKAN (CSV) | `live-power-cuts` → "Live Detailed Power Cuts" | No | `NGED_API_KEY` (optional) | Live |
 | Northern Powergrid | Opendatasoft | _not yet identified_ | Probably | `NPG_API_KEY` | Placeholder |
 | SSEN | _unknown_ | _not yet identified_ | Probably | `SSEN_API_KEY` | Placeholder |
@@ -41,7 +41,7 @@ data to `main`.)
 Never put keys in any committed file. For each DNO you have an account with:
 
 ```bash
-gh secret set ENW_API_KEY
+gh secret set ENWL_API_KEY
 ```
 
 (`gh` prompts for the value so it doesn't end up in your shell history.) Or
@@ -71,7 +71,7 @@ the run summary and in the map panel.
 ## Running locally
 
 ```bash
-ENW_API_KEY=your_key npm run fetch-outages
+ENWL_API_KEY=your_key npm run fetch-outages
 ```
 
 ```bash
@@ -99,7 +99,7 @@ the live site.
 
 - Field names differ between DNOs despite the common NEO format, hence the
   per-DNO `fields` mapping.
-- ENW labels UK local time as `+00:00`; `ignoreTimezoneOffset: true` fixes
+- ENW and SPEN label UK local time as `+00:00`; `ignoreTimezoneOffset: true` fixes
   this. Naive timestamps (e.g. NGED's CSV) are read as UK local time.
 - Placeholder dates such as `0001-01-01` become `null`.
 

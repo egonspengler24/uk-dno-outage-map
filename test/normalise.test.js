@@ -63,3 +63,13 @@ test("every configured DNO has a secret name and boundary", () => {
     if (d.source) assert.ok(d.fields, `${d.id} has a source but no field mapping`);
   }
 });
+
+test("UKPN text-encoded postcode lists are cleaned up", () => {
+  const raw = { fault_id: "INCD-1", postcode: '["CT18 8", \\"CT4 6\\"]', location_latitude: 51.1, location_longitude: 1.1 };
+  assert.deepEqual(normaliseRecord(raw, dno("ukpn")).properties.postcodes, ["CT18 8", "CT4 6"]);
+});
+
+test("SPEN timestamps labelled +00:00 are read as UK local time", () => {
+  const raw = { fault_id: "INCD-2", upload_date: "2026-10-15T12:00:34+00:00", location_latitude: 55.9, location_longitude: -3.2 };
+  assert.equal(normaliseRecord(raw, dno("spen")).properties.as_at, "2026-10-15T11:00:34.000Z");
+});

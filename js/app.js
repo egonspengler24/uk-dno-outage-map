@@ -19,6 +19,7 @@ const STATUS_COLORS = {
   "in progress": "#d7263d",
   awaiting: "#f4a300",
   restored: "#2e7d32",
+  complete: "#2e7d32",
   completed: "#2e7d32",
 };
 

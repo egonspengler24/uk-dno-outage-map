@@ -23,7 +23,7 @@ export const DNOS = [
     boundaryNames: ["ENWL"],
     portalUrl: "https://electricitynorthwest.opendatasoft.com/explore/dataset/sp-enw-live-neop/",
     licence: "SP ENW Shared Licence",
-    secretEnv: "ENW_API_KEY",
+    secretEnv: "ENWL_API_KEY",
     keyRequired: true,
     source: {
       type: "opendatasoft",
@@ -65,8 +65,6 @@ export const DNOS = [
       baseUrl: "https://ukpowernetworks.opendatasoft.com",
       dataset: "ukpn-national-energy-outage",
     },
-    // Mapping taken from the published schema; not yet verified against
-    // live records (needs a key).
     fields: {
       fault_id: "fault_id",
       status: "status",
@@ -98,8 +96,10 @@ export const DNOS = [
       baseUrl: "https://spenergynetworks.opendatasoft.com",
       dataset: "national-energy-outage-data",
     },
-    // Mapping taken from the published schema; not yet verified against
-    // live records (needs a key). SPEN has no confirmed-off count column.
+    // Like ENW, SPEN's timestamps are UK local time labelled +00:00
+    // (upload_date runs an hour ahead of real UTC during BST).
+    ignoreTimezoneOffset: true,
+    // SPEN has no confirmed-off count column.
     fields: {
       fault_id: "fault_id",
       status: "status",

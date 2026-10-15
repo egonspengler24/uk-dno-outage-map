@@ -32,10 +32,15 @@ function toNumber(value) {
   return Number.isFinite(n) ? n : null;
 }
 
+// Postcodes arrive as arrays, comma-separated text, or (UKPN) a JSON-ish
+// list encoded as text with stray brackets, quotes and backslashes.
 function toPostcodes(value) {
   if (isEmpty(value)) return [];
-  const list = Array.isArray(value) ? value : String(value).split(/[,;]/);
-  return list.map((p) => String(p).trim()).filter(Boolean);
+  const list = Array.isArray(value) ? value : [value];
+  return list
+    .flatMap((p) => String(p).replace(/[[\]"'\\]/g, "").split(/[,;]/))
+    .map((p) => p.trim())
+    .filter(Boolean);
 }
 
 function toText(value) {
