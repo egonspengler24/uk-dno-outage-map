@@ -28,8 +28,16 @@ async function dispatchWorkflow(env) {
 }
 
 export default {
-  async scheduled(event, env, ctx) {
-    ctx.waitUntil(dispatchWorkflow(env));
+  async scheduled(event, env) {
+    console.log(
+      `Scheduled run: repo=${env.GITHUB_REPO} workflow=${env.WORKFLOW_FILE} ref=${env.GIT_REF} token=${env.GITHUB_TOKEN ? "set" : "MISSING"}`
+    );
+    try {
+      await dispatchWorkflow(env);
+    } catch (err) {
+      console.error(err.message);
+      throw err;
+    }
   },
 
   async fetch() {
