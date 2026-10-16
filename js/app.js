@@ -2,7 +2,10 @@ const REFRESH_MS = 5 * 60 * 1000; // re-read the static JSON every 5 minutes
 const OUTAGES_URL = "data/outages.json";
 const STATUS_URL = "data/status.json";
 const BOUNDARIES_URL = "data/dno_boundaries.geojson";
-const MASTS_URL = "data/masts.geojson";
+const MASTS_INDEX_URL = "data/masts/index.json";
+const MASTS_TILE_URL = (key) => `data/masts/${key}.json`;
+// Masts are only drawn when zoomed in, so only nearby tiles are loaded.
+const MASTS_MIN_ZOOM = 11;
 
 // Feed freshness thresholds (NEO feeds are agreed to refresh every 15 min).
 const FRESH_MIN = 30;
@@ -26,7 +29,9 @@ const STATUS_COLORS = {
 let statusData = null;
 let outagesData = null;
 let boundariesData = null;
-let mastsLoaded = false;
+let mastIndex = null;
+const mastTiles = new Map(); // tile key -> Promise of site list
+let mastsRequest = 0;
 
 function statusColor(status) {
   return STATUS_COLORS[(status || "").toLowerCase()] || "#6c757d";
@@ -143,21 +148,19 @@ const outagesLayer = L.geoJSON(null, {
   onEachFeature: bindOutagePopup,
 }).addTo(map);
 
-const mastsLayer = L.geoJSON(null, {
-  pointToLayer: (feature, latlng) =>
-    L.circleMarker(latlng, { radius: 3, weight: 1, color: "#3388ff", fillColor: "#3388ff", fillOpacity: 0.5 }),
-  onEachFeature: (feature, layer) => {
-    const p = feature.properties || {};
-    const html =
-      `<strong>Cell/mast</strong><br/>` +
-      `Radio: ${escapeHtml(p.radio ?? "?")}<br/>` +
-      `Cell ID: ${escapeHtml(p.cellid ?? "?")}<br/>` +
-      `Network: MCC ${escapeHtml(p.mcc ?? "?")} / MNC ${escapeHtml(p.net ?? "?")}<br/>` +
-      `Range: ${Number.isFinite(p.range_m) ? `${p.range_m} m` : "?"}`;
-    layer.bindTooltip(html, { sticky: true, direction: "top", opacity: 0.9 });
-    layer.bindPopup(html);
-  },
-});
+const mastsLayer = L.layerGroup();
+
+// Each site is [lon, lat, cells, technologies, networks, lastSeenYear]
+// (see scripts/build-mast-tiles.js).
+function mastHtml([, , cells, technologies, networks, lastSeen]) {
+  return (
+    `<strong>Mast site (approx.)</strong><br/>` +
+    `Networks: ${escapeHtml(networks || "?")}<br/>` +
+    `Technology: ${escapeHtml(technologies || "?")}<br/>` +
+    `Cells: ${cells}` +
+    (lastSeen ? `<br/>Last seen: ${lastSeen}` : "")
+  );
+}
 
 function bindOutagePopup(feature, layer) {
   const p = feature.properties || {};
@@ -275,27 +278,85 @@ async function loadBoundaries() {
   }
 }
 
-async function loadMasts() {
-  if (mastsLoaded) return;
-  mastsLoaded = true;
+function loadMastTile(key) {
+  if (!mastTiles.has(key)) {
+    const promise = fetch(MASTS_TILE_URL(key))
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .catch((err) => {
+        mastTiles.delete(key);
+        throw err;
+      });
+    mastTiles.set(key, promise);
+  }
+  return mastTiles.get(key);
+}
+
+function setMastsHint(text) {
+  document.getElementById("masts-hint").textContent = text;
+}
+
+// Loads the tiles covering the current view and draws only the sites in it.
+async function updateMasts() {
+  if (!document.getElementById("toggle-masts").checked) return;
+  const request = ++mastsRequest;
+
+  if (map.getZoom() < MASTS_MIN_ZOOM) {
+    mastsLayer.clearLayers();
+    setMastsHint("(zoom in to see)");
+    return;
+  }
+
   try {
-    const res = await fetch(MASTS_URL);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    mastsLayer.addData(await res.json());
+    if (!mastIndex) {
+      const res = await fetch(MASTS_INDEX_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      mastIndex = await res.json();
+    }
+    const bounds = map.getBounds().pad(0.2);
+    const deg = mastIndex.tile_deg;
+    const keys = [];
+    for (let y = Math.floor(bounds.getSouth() / deg); y <= Math.floor(bounds.getNorth() / deg); y++) {
+      for (let x = Math.floor(bounds.getWest() / deg); x <= Math.floor(bounds.getEast() / deg); x++) {
+        if (mastIndex.tiles[`${y}_${x}`]) keys.push(`${y}_${x}`);
+      }
+    }
+
+    setMastsHint("(loading…)");
+    const tiles = await Promise.all(keys.map(loadMastTile));
+    if (request !== mastsRequest) return; // the map moved again meanwhile
+
+    mastsLayer.clearLayers();
+    // Smaller dots when zoomed out, so dense urban areas stay readable.
+    const radius = Math.min(5, Math.max(1.5, map.getZoom() - 10));
+    let shown = 0;
+    for (const site of tiles.flat()) {
+      if (!bounds.contains([site[1], site[0]])) continue;
+      L.circleMarker([site[1], site[0]], { radius, weight: 1, color: "#1c7ed6", fillColor: "#4dabf7", fillOpacity: 0.6 })
+        .bindTooltip(() => mastHtml(site), { sticky: true, direction: "top", opacity: 0.9 })
+        .bindPopup(() => mastHtml(site))
+        .addTo(mastsLayer);
+      shown++;
+    }
+    setMastsHint(`(${shown.toLocaleString("en-GB")} sites)`);
   } catch (err) {
-    mastsLoaded = false;
     console.error("Failed to load mast data:", err);
+    setMastsHint("(failed to load)");
   }
 }
 
 document.getElementById("toggle-masts").addEventListener("change", (e) => {
   if (e.target.checked) {
-    loadMasts();
     map.addLayer(mastsLayer);
+    updateMasts();
   } else {
     map.removeLayer(mastsLayer);
+    setMastsHint("");
   }
 });
+map.on("moveend", updateMasts);
 document.getElementById("toggle-planned").addEventListener("change", redraw);
 document.getElementById("toggle-restored").addEventListener("change", redraw);
 

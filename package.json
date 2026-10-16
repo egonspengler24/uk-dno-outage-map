@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "fetch-outages": "node scripts/fetch-outages.js",
-    "fetch-masts": "node scripts/fetch-masts.js",
+    "build-masts": "node scripts/build-mast-tiles.js",
     "build-boundaries": "node scripts/build-boundaries.js",
     "test": "node --test"
   },

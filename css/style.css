@@ -137,6 +137,11 @@ html, body {
   cursor: pointer;
 }
 
+.toggle-row .hint {
+  color: #777;
+  font-size: 11.5px;
+}
+
 #attribution {
   margin-top: 10px;
   padding-top: 8px;

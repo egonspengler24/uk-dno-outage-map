@@ -8,7 +8,7 @@ Operator (DNO) and shows:
 - each DNO's licence area coloured by **how fresh its feed is**,
 - a panel listing every DNO with when its data was last refreshed, or why
   it isn't live yet,
-- an optional mobile mast overlay (OpenCelliD).
+- an optional UK-wide mobile mast overlay (OpenCelliD).
 
 A scheduled GitHub Actions job fetches every feed every 15 minutes,
 normalises the records to one shape, and deploys the site plus
@@ -127,14 +127,23 @@ the live site.
   this. Naive timestamps (e.g. NGED's CSV) are read as UK local time.
 - Placeholder dates such as `0001-01-01` become `null`.
 
-## Mobile mast layer (optional)
+## Mobile mast layer
 
-1. Sign up for a free key at https://opencellid.org/.
-2. `OPENCELLID_API_KEY=your_key npm run fetch-masts`
-3. Commit the resulting `data/masts.geojson` (static data, not a secret).
+UK-wide mast sites from OpenCelliD, shown when "Mobile masts" is ticked and
+you're zoomed in (zoom 11+). Cells within ~100 m are grouped into one
+approximate site, and the sites are split into 0.5° tiles in `data/masts/`
+so the map only loads the area in view.
 
-The layer loads only when "Mobile masts" is ticked. OpenCelliD entries are
-crowd-sourced and approximate; data is CC-BY-SA 4.0.
+To refresh it, download the UK export (`234.csv.gz`) from opencellid.org
+with your account, then:
+
+```bash
+npm run build-masts -- ~/Downloads/234.csv.gz
+```
+
+and commit `data/masts/`. OpenCelliD positions are crowd-sourced averages
+of where each cell was measured, so sites are approximate. Data is
+CC BY-SA 4.0; keep the attribution shown in the app.
 
 ## Licensing
 
